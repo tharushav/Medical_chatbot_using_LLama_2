@@ -2,7 +2,10 @@ ctransformers
 sentence-transformers
 pinecone
 langchain
+langchain-pinecone
+langchain-community
+langchain-huggingface
 flask
 pypdf
 python-dotenv
-langchain-community
+-e .

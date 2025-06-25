@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedBot - Your Medical Assistant</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7fa;
+        }
+        .app-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .chat-container {
+            width: 100%;
+            max-width: 900px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        header {
+            background: #007bff;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        .logo i {
+            font-size: 28px;
+            margin-right: 10px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .title-container h1 {
+            font-size: 24px;
+            margin: 0;
+        }
+        .title-container p {
+            margin: 5px 0 0;
+            font-size: 14px;
+        }
+        .header-actions button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        .chat-box {
+            height: 500px;
+            overflow-y: auto;
+            padding: 20px;
+            border-top: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+        }
+        .welcome-message {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .bot-avatar, .user-avatar {
+            font-size: 32px;
+            margin-right: 10px;
+        }
+        .message {
+            padding: 10px 15px;
+            border-radius: 20px;
+            max-width: 80%;
+            position: relative;
+        }
+        .message.user {
+            background: #007bff;
+            color: white;
+            margin-left: auto;
+            border-top-right-radius: 0;
+        }
+        .message.bot {
+            background: #f1f1f1;
+            color: #333;
+            border-top-left-radius: 0;
+        }
+        .message-time {
+            font-size: 12px;
+            color: #999;
+            position: absolute;
+            bottom: -18px;
+            right: 10px;
+        }
+        #chat-form {
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid #eee;
+            background: #fff;
+        }
+        #user-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 16px;
+        }
+        button[type="submit"] {
+            padding: 12px 18px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button[type="submit"]:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            padding: 10px 15px;
+            font-size: 14px;
+            color: #666;
+        }
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            margin: 0 3px;
+            background: #007bff;
+            border-radius: 50%;
+            animation: blink 1.4s infinite both;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+        .disclaimer {
+            padding: 15px;
+            font-size: 14px;
+            color: #666;
+            background: #f9f9f9;
+            border-top: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+        .disclaimer i {
+            margin-right: 8px;
+            color: #007bff;
+        }
+        @media (max-width: 600px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .header-actions {
+                margin-top: 10px;
+            }
+            .chat-box {
+                padding: 15px;
+            }
+            .message {
+                padding: 8px 12px;
+            }
+            #user-input {
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+            button[type="submit"] {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="chat-container">
+            <header>
+                <div class="logo">
+                    <i class="fas fa-heartbeat pulse"></i>
+                    <div class="title-container">
+                        <h1>MedBot</h1>
+                        <p>Your AI Medical Assistant</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button id="clear-chat" title="Clear conversation">
+                        <i class="fas fa-broom"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="chat-box" id="chat-box">
+                <div class="welcome-message">
+                    <div class="bot-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message bot">
+                        <p>Hello! I'm MedBot, your AI-powered medical assistant. I can help answer your health-related questions.</p>
+                        <p>Please note that I'm here to provide information only and not to replace professional medical advice.</p>
+                        <div class="message-time">Today, just now</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="loading">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <span>MedBot is thinking</span>
+            </div>
+
+            <form id="chat-form" class="chat-input">
+                <input type="text" id="user-input" placeholder="Ask me about your health concerns..." autocomplete="off" required>
+                <button type="submit" id="send-btn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+
+            <div class="disclaimer">
+                <i class="fas fa-info-circle"></i>
+                <span>For medical emergencies, please call emergency services immediately.</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById("chat-form");
+        const input = document.getElementById("user-input");
+        const chatBox = document.getElementById("chat-box");
+        const sendBtn = document.getElementById("send-btn");
+        const loading = document.getElementById("loading");
+        const clearChatBtn = document.getElementById("clear-chat");
+        
+        // Format current time
+        function getCurrentTime() {
+            const now = new Date();
+            return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const userMessage = input.value.trim();
+            
+            if (!userMessage) return;
+            
+            addMessage(userMessage, "user");
+            input.value = "";
+            input.focus();
+            sendBtn.disabled = true;
+            loading.classList.add("active");
+
+            try {
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: userMessage })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                setTimeout(() => {
+                    if (data.error) {
+                        addMessage(`Error: ${data.error}`, "bot");
+                    } else {
+                        addMessage(data.reply || "I'm sorry, I couldn't generate a response. Please try again.", "bot");
+                    }
+                    loading.classList.remove("active");
+                    sendBtn.disabled = false;
+                }, 500); // Small delay for natural feeling
+                
+            } catch (error) {
+                console.error("Error:", error);
+                setTimeout(() => {
+                    addMessage("I'm sorry, there was an error processing your request. Please try again.", "bot");
+                    loading.classList.remove("active");
+                    sendBtn.disabled = false;
+                }, 500);
+            }
+        };
+
+        function addMessage(message, type) {
+            const messageContainer = document.createElement("div");
+            messageContainer.classList.add("message-container");
+            
+            if (type === "user") {
+                messageContainer.classList.add("user-container");
+                messageContainer.innerHTML = `
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="message user">
+                        <p>${message}</p>
+                        <div class="message-time">${getCurrentTime()}</div>
+                    </div>
+                `;
+            } else {
+                messageContainer.innerHTML = `
+                    <div class="bot-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message bot">
+                        <p>${message}</p>
+                        <div class="message-time">${getCurrentTime()}</div>
+                    </div>
+                `;
+            }
+            
+            chatBox.appendChild(messageContainer);
+            
+            // Smooth scroll to the latest message
+            setTimeout(() => {
+                messageContainer.classList.add("show");
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, 10);
+        }
+        
+        // Clear chat functionality
+        clearChatBtn.addEventListener("click", () => {
+            // Keep only the welcome message
+            chatBox.innerHTML = `
+                <div class="welcome-message">
+                    <div class="bot-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message bot">
+                        <p>Hello! I'm MedBot, your AI-powered medical assistant. I can help answer your health-related questions.</p>
+                        <p>Please note that I'm here to provide information only and not to replace professional medical advice.</p>
+                        <div class="message-time">Today, just now</div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        // Focus on input when page loads
+        window.onload = () => input.focus();
+    </script>
+</body>
+</html>
